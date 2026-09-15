@@ -1,0 +1,170 @@
+<div id="chatbox-fragment">
+    <!-- Chat Toggle Button -->
+    <div class="chat-btn-toggle" onclick="toggleChat()">
+        <i class="fa fa-comments"></i>
+    </div>
+
+    <!-- Chat Container -->
+    <div class="chat-container" id="chatContainer">
+        <div class="chat-header">
+            <div><i class="fa fa-robot mr-2"></i> SportAI Support</div>
+            <span onclick="toggleChat()"><i class="fa fa-times"></i></span>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="msg-wrapper bot">
+                <div class="msg bot">Chào bạn! Mình là SportAI, bạn cần hỗ trợ đặt sân hay tìm hiểu thông tin gì không?</div>
+            </div>
+            <div class="quick-replies" id="quickReplies">
+                <button class="quick-reply-btn" onclick="sendQuickReply('Tôi muốn tìm sân bóng')">Tìm sân bóng</button>
+                <button class="quick-reply-btn" onclick="sendQuickReply('Xem tin tức sự kiện')">Tin tức sự kiện</button>
+                <button class="quick-reply-btn" onclick="sendQuickReply('Cách thức thanh toán')">Cách thanh toán</button>
+                <button class="quick-reply-btn" onclick="sendQuickReply('Chính sách hoàn tiền')">Chính sách</button>
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="chatInputMessage" placeholder="Nhập tin nhắn..." onkeypress="handleChatKeyPress(event)">
+            <button onclick="sendChatMessage()"><i class="fa fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script>
+        function toggleChat() {
+            var chatContainer = document.getElementById("chatContainer");
+            if (chatContainer.style.display === "flex") {
+                chatContainer.style.display = "none";
+            } else {
+                chatContainer.style.display = "flex";
+                var chatMessages = document.getElementById("chatMessages");
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+
+        function handleChatKeyPress(event) {
+            if (event.key === "Enter") {
+                sendChatMessage();
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            loadChatHistory();
+        });
+
+        function getHistoryKey() {
+            var username = document.querySelector(".dropdown-toggle") ? document.querySelector(".dropdown-toggle").innerText.trim() : "guest";
+            return "sportai_chat_history_" + username;
+        }
+
+        function saveChatHistory() {
+            var chatMessages = document.getElementById("chatMessages").innerHTML;
+            sessionStorage.setItem(getHistoryKey(), chatMessages);
+        }
+
+        function loadChatHistory() {
+            var history = sessionStorage.getItem(getHistoryKey());
+            if (history) {
+                document.getElementById("chatMessages").innerHTML = history;
+            }
+        }
+
+        function sendQuickReply(text) {
+            document.getElementById("chatInputMessage").value = text;
+            // Hide quick replies after one is clicked
+            var qr = document.getElementById("quickReplies");
+            if(qr) qr.style.display = 'none';
+            sendChatMessage();
+        }
+
+        function sendChatMessage() {
+            var input = document.getElementById("chatInputMessage");
+            var message = input.value.trim();
+            if (message === "") return;
+
+            // Hiển thị tin nhắn người dùng
+            appendMessage(message, "user");
+            input.value = "";
+
+            // Lấy ngữ cảnh sân hiện tại từ trang (nếu có)
+            var currentContext = "";
+            if (window.location.href.includes("/sportify/field/detail/")) {
+                var fieldNameElem = document.querySelector("h3.mt-4"); 
+                if (fieldNameElem) {
+                    currentContext = "Ngữ cảnh: Khách hàng đang đứng ở trang chi tiết của sân: " + fieldNameElem.innerText.trim();
+                }
+            }
+
+            // Call API
+            fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    message: message,
+                    context: currentContext 
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(err => { throw new Error(err || response.statusText); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Hiển thị log lỗi nếu vẫn undefined để dễ bắt bệnh
+                if (data.text === undefined) {
+                    appendMessage("Lỗi kỹ thuật! Dữ liệu trả về: " + JSON.stringify(data), "bot");
+                    return;
+                }
+
+                // Hiển thị tin nhắn AI
+                appendMessage(data.text, "bot");
+
+                // Hiển thị thẻ sân bóng nếu có
+                if (data.fields && data.fields.length > 0) {
+                    appendFieldCards(data.fields);
+                }
+            })
+            .catch(error => {
+                appendMessage("Lỗi kết nối hoặc server: " + error.message, "bot");
+                console.error('Error:', error);
+            });
+        }
+
+        function appendMessage(text, sender) {
+            var chatMessages = document.getElementById("chatMessages");
+            var wrapper = document.createElement("div");
+            wrapper.className = "msg-wrapper " + sender;
+            
+            var msgDiv = document.createElement("div");
+            msgDiv.className = "msg " + sender;
+            msgDiv.innerText = text;
+            
+            wrapper.appendChild(msgDiv);
+            chatMessages.appendChild(wrapper);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            saveChatHistory();
+        }
+
+        function appendFieldCards(fields) {
+            var chatMessages = document.getElementById("chatMessages");
+            
+            fields.forEach(function(field) {
+                var card = document.createElement("div");
+                card.className = "field-card";
+                
+                var formatPrice = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(field.price);
+                
+                card.innerHTML = `
+                    <img src="/user/images/${field.image}" alt="${field.namefield}">
+                    <h4>${field.namefield}</h4>
+                    <p>Giá: ${formatPrice}</p>
+                    <a href="/sportify/field/detail/${field.fieldid}">Chi tiết & Đặt ngay</a>
+                `;
+                chatMessages.appendChild(card);
+            });
+            
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            saveChatHistory();
+        }
+    </script>
+</div>

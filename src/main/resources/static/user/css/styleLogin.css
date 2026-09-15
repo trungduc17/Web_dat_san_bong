@@ -1,0 +1,69 @@
+/*
+*
+* ==========================================
+* CUSTOM UTIL CLASSES
+* ==========================================
+*
+*/
+.login, .image {
+	min-height: 100vh;
+}
+
+.login {
+	align-items: flex-start !important;
+	padding-top: 15vh !important;
+}
+
+.bg-image {
+	background-image:
+		url('/user/images/login-bg.png');
+	background-size: cover;
+	background-position: center center;
+}
+
+/* Thêm màu sắc thể thao */
+.sporty-btn-primary {
+    background: linear-gradient(135deg, #2E7D32, #4CAF50);
+    border: none;
+    color: white;
+    font-weight: 600;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.sporty-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+    color: white;
+}
+.form-control.rounded-pill {
+    background-color: #f4f6f9;
+    border: 2px solid transparent !important;
+    transition: all 0.3s;
+    padding: 12px 20px;
+}
+.form-control.rounded-pill:focus {
+    border-color: #4CAF50 !important;
+    box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25) !important;
+    background-color: #ffffff;
+}
+.text-sporty {
+    color: #2E7D32 !important;
+    font-weight: 500;
+    text-decoration: none;
+}
+a.text-sporty:hover {
+    color: #1b5e20 !important;
+    text-decoration: underline;
+}
+.custom-card {
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    padding: 40px 30px;
+}
+.display-4 {
+    font-weight: 700;
+    background: -webkit-linear-gradient(45deg, #2E7D32, #4CAF50);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 30px;
+}
